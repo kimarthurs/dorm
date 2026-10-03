@@ -1,0 +1,8 @@
+<style>
+    .ztree li a span.button {
+        background-size: 16px !important;
+    }
+    .ztree li span {
+        margin-left: 5px;
+    }
+</style>

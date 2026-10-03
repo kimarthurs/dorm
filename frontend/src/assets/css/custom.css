@@ -1,0 +1,15 @@
+/* 누락된 Layui 아이콘 폰트를 온라인(CDN)에서 직접 끌어와서 덮어씌웁니다 */
+@font-face {
+  font-family: 'layui-icon';
+  src: url('https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.3/font/iconfont.woff2') format('woff2'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.3/font/iconfont.woff') format('woff'),
+       url('https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.3/font/iconfont.ttf') format('truetype');
+}
+
+/* 기존에 있던 코드들... */
+.ztree li a span.button {
+    background-size: 16px !important;
+}
+.ztree li span {
+    margin-left: 5px;
+}
