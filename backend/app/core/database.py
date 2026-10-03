@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg2://postgres:A49q7933p21!@localhost:5433/dormitory_db"
-
+SQLALCHEMY_DATABASE_URL = "postgresql://margaron55:D49b7933p21!@overloader.postgres.database.azure.com:5432/dormitory_db?sslmode=require"
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={"client_encoding": "utf8"}

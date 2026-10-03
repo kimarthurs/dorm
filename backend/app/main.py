@@ -8,6 +8,7 @@ from app.models import staff, item_request, maintenance, visitor, log #生成的
 from app.api import auth, students, dormitories, residence, item_requests
 from datetime import datetime
 from app.api import maintenance, visitors
+from app.api import statistics
 
 app = FastAPI(title="校园宿舍事务与出入登记管理系统 API")
 app = FastAPI()
@@ -20,6 +21,7 @@ app.include_router(residence.router)
 app.include_router(item_requests.router)
 app.include_router(maintenance.router) 
 app.include_router(visitors.router)
+app.include_router(statistics.router)
 
 
 app.add_middleware(

@@ -11,6 +11,8 @@ import ResidenceManagementPage from './pages/ResidenceManagementPage';
 import VisitorManagementPage from './pages/VisitorManagementPage';
 import MyResidencePage from './pages/MyResidencePage';
 import CounselorStatisticsPage from './pages/CounselorStatisticsPage';
+import MaintenancePage from './pages/MaintenancePage';
+import MaintenanceManagementPage from './pages/MaintenanceManagementPage';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
         <Route path="/visitor-management" element={<VisitorManagementPage />} />
         <Route path="/my-residence" element={<MyResidencePage />} />
         <Route path="/counselor-statistics" element={<CounselorStatisticsPage />} />
+        <Route path="/maintenance" element={<MaintenancePage />} />
+        <Route path="/maintenance-handling" element={<MaintenanceManagementPage />} />
       </Routes>
     </BrowserRouter>
   );

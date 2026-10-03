@@ -35,7 +35,7 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
     
     return new_user
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 def login_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
     """
     用户认证后，把发放JWT token
@@ -58,4 +58,9 @@ def login_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordR
         data={"sub": str(user.id), "role": user.role}, expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+            "access_token": access_token, 
+            "token_type": "bearer",
+            "role": user.role,
+            "name": user.username
+        }

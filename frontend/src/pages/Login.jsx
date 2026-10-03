@@ -7,35 +7,42 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-    const handleLogin = async (e) => {
-      e.preventDefault();
-      const inputId = username.trim();
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const inputId = username.trim();
 
-      try {
-        // 💡 FastAPI의 OAuth2PasswordRequestForm 표준에 맞춘 전송 방식 (FormData 사용)
-        const formData = new URLSearchParams();
-        formData.append('username', inputId);
-        formData.append('password', password);
+    try {
+      const formData = new URLSearchParams();
+      formData.append('username', inputId);
+      formData.append('password', password);
 
-        // 1. 진짜 백엔드로 로그인 요청
-        const response = await apiClient.post('/api/auth/login', formData);
-        
-        // 2. 백엔드에서 준 진짜 데이터 저장
-        const { access_token, role, name } = response.data; // 백엔드 응답 형태에 맞게 수정 필요
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userName', name || inputId); // 이름이 없으면 학번으로
+      const response = await apiClient.post('/api/auth/login', formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      
+      const { access_token } = response.data;
+      localStorage.setItem('token', access_token);
 
-        // 3. 라우팅
-        if (role === 'counselor') navigate('/CounselorDashboard');
-        else if (role === 'dormAdmin') navigate('/AdminDashboard');
-        else navigate('/StudentDashboard');
+      const role = response.data.role || 'student'; 
+      const name = response.data.name || inputId;
+      
+      localStorage.setItem('userRole', role);
+      localStorage.setItem('userName', name); 
 
-      } catch (error) {
-        alert('登录失败：再确认一下您的账号和密码');
-        console.error(error);
+      if (role === 'counselor') {
+        navigate('/CounselorDashboard');
+      } else if (role === 'dormAdmin') {
+        navigate('/AdminDashboard');
+      } else {
+        navigate('/StudentDashboard');
       }
-    };
+
+    } catch (error) {
+      console.error('登录错误：', error);
+      alert('登录失败：再确认一下您的学号和密码');
+    }
+  };
+
 
   return (
     <div style={{ 

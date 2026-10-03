@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../api'; 
 
 export default function MyResidencePage() {
   const navigate = useNavigate();
   const userRole = localStorage.getItem('userRole');
   const userName = localStorage.getItem('userName') || '金将源';
 
-  // 权限校验：仅学生可以访问
   if (userRole !== 'student') {
     return (
       <div style={{ padding: '50px', textAlign: 'center' }}>
@@ -16,23 +16,52 @@ export default function MyResidencePage() {
     );
   }
 
-  // 演示用个人住宿数据 (나중에 GET /api/residences/my 로 교체)
-  const [residenceInfo] = useState({
-    campus: '良乡校区',
-    building: 'A栋',
-    roomNo: '305',
-    bedNo: '2号床',
-    status: '正常入住',
-    checkInDate: '2023-09-02',
-  });
+  const [residenceInfo, setResidenceInfo] = useState(null);
+  const [roommates, setRoommates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // 演示用室友数据
-  const [roommates] = useState([
-    { bedNo: '1号床', name: '张三', status: '已入住' },
-    { bedNo: '2号床', name: userName, status: '本人' },
-    { bedNo: '3号床', name: '李四', status: '已入住' },
-    { bedNo: '4号床', name: '-', status: '空闲' },
-  ]);
+  useEffect(() => {
+    const loadMyResidence = async () => {
+      try {
+        setLoading(true);
+        setErrorMessage('');
+
+        const response = await apiClient.get('/api/residences/my');
+
+        setResidenceInfo(response.data);
+        setRoommates(response.data.roommates || []);
+      } catch (error) {
+        console.error('获取住宿信息失败：', error);
+        setErrorMessage(
+          error.response?.data?.detail ||
+          '住宿信息加载失败，请稍后重试。'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMyResidence();
+  }, []);  
+
+  if (loading) {
+    return (
+      <div style={{ padding: '100px', textAlign: 'center', fontSize: '18px', color: '#666' }}>
+        <i className="layui-icon layui-icon-loading layui-anim layui-anim-rotate layui-anim-loop" style={{ fontSize: '24px', marginRight: '10px' }}></i>
+        正在加载住宿信息...
+      </div>
+    );
+  }
+
+  if (errorMessage || !residenceInfo) {
+    return (
+      <div style={{ padding: '50px', textAlign: 'center', color: '#FF5722' }}>
+        <h2>{errorMessage || '暂无住宿信息'}</h2>
+        <button className="layui-btn layui-btn-normal" style={{ marginTop: '20px' }} onClick={() => navigate(-1)}>返回</button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f1f5f8' }}>
@@ -76,7 +105,7 @@ export default function MyResidencePage() {
                 <td style={{ color: '#009688', fontWeight: 'bold' }}>{residenceInfo.status}</td>
               </tr>
               <tr>
-                <td style={{ backgroundColor: '#f8f8f8', fontWeight: 'bold' }}>入住时间 </td>
+                <td style={{ backgroundColor: '#f8f8f8', fontWeight: 'bold' }}>入住时间</td>
                 <td>{residenceInfo.checkInDate}</td>
               </tr>
             </tbody>
@@ -112,6 +141,11 @@ export default function MyResidencePage() {
                   </td>
                 </tr>
               ))}
+              {roommates.length === 0 && (
+                <tr>
+                  <td colSpan="3" style={{ textAlign: 'center', color: '#999' }}>暂无室友信息</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

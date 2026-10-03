@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../api';
 
 export default function ItemRequestPage() {
   const navigate = useNavigate();
@@ -27,49 +28,103 @@ export default function ItemRequestPage() {
     reason: '',
   });
 
-  const [myRequests, setMyRequests] = useState([
-    {
-      id: 1,
-      itemName: '台式电脑',
-      type: '带入',
-      expectedTime: '2026-10-05 14:00',
-      status: '待审核',
-      reason: '因课程设计需要带入个人电脑',
-    },
-  ]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const fetchMyRequests = async () => {
+    try {
+      setLoading(true);
+
+      const response = await apiClient.get('/api/items/my');
+
+      setMyRequests(response.data);
+    } catch (error) {
+      console.error('获取申请记录失败：', error);
+      alert(
+        error.response?.data?.detail ||
+        '获取申请记录失败，请稍后重试。'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    fetchMyRequests();
+  }, []);
 
-    const newRequest = {
-      id: Date.now(),
-      ...formData,
-      status: '待审核',
-    };
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
 
-    setMyRequests([newRequest, ...myRequests]);
-    alert('申请提交成功。');
     setFormData({
-      itemName: '',
-      type: '带入',
-      expectedTime: '',
-      reason: '',
+      ...formData,
+      [name]: value,
     });
   };
 
-  const handleCancel = (id) => {
-    if (window.confirm('确定要撤销该申请吗？')) {
-      apiClient.post('/api/items/request')(
-        myRequests.map((req) =>
-          req.id === id ? { ...req, status: '已撤销' } : req
-        )
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      await apiClient.post('/api/items/request', {
+        item_name: formData.itemName,
+        access_type: formData.type,
+        planned_time: formData.expectedTime,
+        reason: formData.reason,
+      });
+
+      alert('申请提交成功。');
+
+      setFormData({
+        itemName: '',
+        type: '带入',
+        expectedTime: '',
+        reason: '',
+      });
+
+      await fetchMyRequests();
+    } catch (error) {
+      console.error('提交申请失败：', error);
+
+      alert(
+        error.response?.data?.detail ||
+        '提交申请失败，请稍后重试。'
       );
     }
+  };
+
+  const handleCancel = async (id) => {
+    if (!window.confirm('确定要撤销该申请吗？')) {
+      return;
+    }
+
+    try {
+      await apiClient.patch(`/api/items/${id}/cancel`);
+
+      alert('申请已撤销。');
+
+      await fetchMyRequests();
+    } catch (error) {
+      console.error('撤销申请失败：', error);
+
+      alert(
+        error.response?.data?.detail ||
+        '撤销申请失败，请确认申请状态后重试。'
+      );
+    }
+  };
+
+  const getStatusColor = (status) => {
+    if (status === '待审核') return '#FFB800';
+    if (status === '已批准') return '#009688';
+    if (status === '已撤销') return '#999';
+    return '#FF5722';
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return '-';
+
+    return String(value).replace('T', ' ').slice(0, 16);
   };
 
   return (
@@ -101,7 +156,6 @@ export default function ItemRequestPage() {
           margin: '0 auto',
         }}
       >
-        {/* 新建申请表单 */}
         <div
           style={{
             backgroundColor: 'white',
@@ -127,7 +181,11 @@ export default function ItemRequestPage() {
               <label className="layui-form-label" style={{ width: '100px' }}>
                 物品名称
               </label>
-              <div className="layui-input-block" style={{ marginLeft: '130px' }}>
+
+              <div
+                className="layui-input-block"
+                style={{ marginLeft: '130px' }}
+              >
                 <input
                   type="text"
                   name="itemName"
@@ -144,7 +202,11 @@ export default function ItemRequestPage() {
               <label className="layui-form-label" style={{ width: '100px' }}>
                 出入类型
               </label>
-              <div className="layui-input-block" style={{ marginLeft: '130px' }}>
+
+              <div
+                className="layui-input-block"
+                style={{ marginLeft: '130px' }}
+              >
                 <select
                   name="type"
                   className="layui-input"
@@ -162,7 +224,11 @@ export default function ItemRequestPage() {
               <label className="layui-form-label" style={{ width: '100px' }}>
                 预计时间
               </label>
-              <div className="layui-input-block" style={{ marginLeft: '130px' }}>
+
+              <div
+                className="layui-input-block"
+                style={{ marginLeft: '130px' }}
+              >
                 <input
                   type="datetime-local"
                   name="expectedTime"
@@ -178,7 +244,11 @@ export default function ItemRequestPage() {
               <label className="layui-form-label" style={{ width: '100px' }}>
                 申请原因
               </label>
-              <div className="layui-input-block" style={{ marginLeft: '130px' }}>
+
+              <div
+                className="layui-input-block"
+                style={{ marginLeft: '130px' }}
+              >
                 <textarea
                   name="reason"
                   required
@@ -205,7 +275,6 @@ export default function ItemRequestPage() {
           </form>
         </div>
 
-        {/* 我的申请记录 */}
         <div
           style={{
             backgroundColor: 'white',
@@ -225,69 +294,74 @@ export default function ItemRequestPage() {
             我的申请记录
           </h3>
 
-          <table className="layui-table">
-            <thead>
-              <tr>
-                <th>申请编号</th>
-                <th>物品名称</th>
-                <th>出入类型</th>
-                <th>预计时间</th>
-                <th>状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {myRequests.map((req) => (
-                <tr key={req.id}>
-                  <td>REQ-{req.id.toString().slice(-4)}</td>
-                  <td>{req.itemName}</td>
-                  <td>{req.type}</td>
-                  <td>{req.expectedTime}</td>
-
-                  <td>
-                    <span
-                      style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        color: 'white',
-                        fontSize: '12px',
-                        backgroundColor:
-                          req.status === '待审核'
-                            ? '#FFB800'
-                            : req.status === '已批准'
-                              ? '#009688'
-                              : req.status === '已撤销'
-                                ? '#999'
-                                : '#FF5722',
-                      }}
-                    >
-                      {req.status}
-                    </span>
-                  </td>
-
-                  <td>
-                    {req.status === '待审核' && (
-                      <button
-                        className="layui-btn layui-btn-danger layui-btn-sm"
-                        onClick={() => handleCancel(req.id)}
-                      >
-                        撤销申请
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-
-              {myRequests.length === 0 && (
+          {loading ? (
+            <div
+              style={{
+                padding: '30px',
+                textAlign: 'center',
+                color: '#666',
+              }}
+            >
+              正在加载申请记录……
+            </div>
+          ) : (
+            <table className="layui-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center' }}>
-                    暂无申请记录。
-                  </td>
+                  <th>申请编号</th>
+                  <th>物品名称</th>
+                  <th>出入类型</th>
+                  <th>预计时间</th>
+                  <th>状态</th>
+                  <th>操作</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {myRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td>REQ-{String(request.id).padStart(4, '0')}</td>
+                    <td>{request.item_name || '-'}</td>
+                    <td>{request.access_type || '-'}</td>
+                    <td>{formatDateTime(request.planned_time)}</td>
+
+                    <td>
+                      <span
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          color: 'white',
+                          fontSize: '12px',
+                          backgroundColor: getStatusColor(request.status),
+                        }}
+                      >
+                        {request.status}
+                      </span>
+                    </td>
+
+                    <td>
+                      {request.status === '待审核' && (
+                        <button
+                          className="layui-btn layui-btn-danger layui-btn-sm"
+                          onClick={() => handleCancel(request.id)}
+                        >
+                          撤销申请
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+
+                {myRequests.length === 0 && (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center' }}>
+                      暂无申请记录。
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../api';
+import apiClient from '../services/apiClient';
 
 export default function ItemApprovalPage() {
   const navigate = useNavigate();
