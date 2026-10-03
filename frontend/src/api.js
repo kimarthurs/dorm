@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://api-dorm.overloader.cloud:8443',
+  baseURL: 'http://129.154.58.3:8000',
   headers: {
     'Content-Type': 'application/json',
   },
